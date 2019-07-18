@@ -60,9 +60,13 @@ class Checks(upgradecheck.UpgradeCommands):
         # Count the total number of consumers.
         num_consumers = ctxt.session.query(models.Consumer).count()
         # Count the total number of unique consumers in the allocations table.
-        num_alloc_consumers = ctxt.session.query(models.Allocation).group_by(
-            models.Allocation.consumer_id).count()
-        return num_alloc_consumers - num_consumers
+        num_alloc_consumers = ctxt.session.query(models.Allocation.consumer_id,
+                                                 sa.func.count(models.Allocation.consumer_id)).group_by(
+            models.Allocation.consumer_id).all()
+        if num_alloc_consumers:
+            return num_alloc_consumers[1] - num_consumers
+        else:
+            return 0
 
     def _check_incomplete_consumers(self):
         """Allocations created with microversion<1.8 prior to Rocky will not
